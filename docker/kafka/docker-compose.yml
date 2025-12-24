@@ -59,6 +59,15 @@ services:
     networks:
       - kafka-net
 
+  producer:
+    build: ./producer
+    container_name: taxi-producer
+    depends_on:
+      - kafka1
+    networks:
+      - kafka-net
+
+
 networks:
   kafka-net:
     driver: bridge
