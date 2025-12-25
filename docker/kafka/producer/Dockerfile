@@ -2,12 +2,11 @@ FROM python:3.10-slim
 
 WORKDIR /app
 
-COPY docker/kafka/producer/requirements.txt .
+COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY docker/kafka/producer/producer.py .
-COPY data/output ./data
+COPY producer.py .
+# COPY data ./data
 
 CMD ["python", "producer.py"]
-
 
