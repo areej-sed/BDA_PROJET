@@ -209,6 +209,12 @@ docker exec -it mongos mongosh --eval "sh.enableSharding('taxi_streaming')"
 
 ```bash
 docker exec -it mongos mongosh --eval "use taxi_streaming; db.createCollection('taxi_events'); db.taxi_events.createIndex({trip_id:1},{unique:true}); db.taxi_events.createIndex({pickup_borough_id:1}); sh.shardCollection('taxi_streaming.taxi_events',{pickup_borough_id:1})"
+
+docker exec -it mongos mongosh --eval "use taxi_streaming;"
+docker exec -it mongos mongosh --eval "db.createCollection('taxi_events');"
+docker exec -it mongos mongosh --eval "db.taxi_events.createIndex({trip_id:1},{unique:true});"
+docker exec -it mongos mongosh --eval "db.taxi_events.createIndex({pickup_borough_id:1});"
+docker exec -it mongos mongosh --eval "sh.shardCollection('taxi_streaming.taxi_events',{pickup_borough_id:1});"
 ```
 
 **Vérification du statut du Sharding**
