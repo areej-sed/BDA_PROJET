@@ -82,9 +82,10 @@ python verifications.py
 
 ## Partie 2 : Mise en place du Cluster Kafka avec Docker
 
-**Étape 1 : Inspecter le fichier Parquet**
+**Étape 1 :**
 
 ```bash
+docker network create kafka-net
 cd docker/kafka
 docker compose up -d
 ```
@@ -102,5 +103,27 @@ docker logs kafka1
 ```
 
 **Étape 2 : Création du topic Kafka taxi.raw**
+
+## Partie 4 : Mise en place du Cluster Cassandra avec Docker
+
+**Étape 1 : Lancer le cluster Cassandra**
+
+```bash
+cd docker/cassandra
+docker-compose -f docker-compose_cassandra.yml up -d
+```
+
+**Vérification**
+
+```bash
+docker ps
+```
+
+**Étape 2 : Lancer le consumer pour creer et remplir les tables**
+
+```bash
+cd docker/kafka
+docker compose up -d consumer_cassandra
+```
 
 ---
