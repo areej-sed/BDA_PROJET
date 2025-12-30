@@ -24,6 +24,9 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka1:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
+
     networks:
       - kafka-net
 
@@ -40,6 +43,8 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka2:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     networks:
       - kafka-net
 
@@ -56,6 +61,8 @@ services:
       KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092
       KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka3:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 2
+      KAFKA_DELETE_TOPIC_ENABLE: 'true'
+      KAFKA_AUTO_CREATE_TOPICS_ENABLE: 'false'
     networks:
       - kafka-net
 
@@ -66,8 +73,18 @@ services:
       - kafka1
     networks:
       - kafka-net
+    volumes:
+      - ../../data/output/:/app/data
 
+  consumer_cassandra:
+    build: ./consumer/cassandra
+    container_name: taxi-consumer-cassandra
+    depends_on:
+      - kafka1
+    networks:
+      - kafka-net
 
 networks:
   kafka-net:
     driver: bridge
+    external: true
