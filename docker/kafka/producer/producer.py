@@ -22,10 +22,11 @@ def send_event(event):
         value=event
     )
 
-    # Print every 1000 events
-    # if event_counter % 1000 == 0:
-    print(f"Envoyé : {event.get('trip_id')} | key={key} | Total events: {event_counter}")
-    time.sleep(0.01)
+
+    if event_counter % 1000 == 0:
+        print(f"Envoyé : {event.get('trip_id')} | key={key} | Total events: {event_counter}")
+    # time.sleep(0.0001)
+
 
 producer = KafkaProducer(
     bootstrap_servers=['kafka1:9092'],
@@ -34,10 +35,12 @@ producer = KafkaProducer(
     key_serializer=lambda k: k.encode('utf-8')
 )
 
+
 print("KAFKA PRODUCER - STREAMING TAXI DATA ======================")
 
 
 with open("data/final_data.json", "r") as f:
+
     first_char = f.read(1)
     f.seek(0)
 
@@ -67,6 +70,7 @@ print(f"Memory Used: {memory_used:.2f} MB")
 print(f"CPU Usage: {cpu_percent:.2f}%")
 print(f"Timestamp: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}")
 print("="*50)
+<<<<<<< HEAD
 
 
 # from kafka import KafkaProducer
@@ -206,3 +210,5 @@ print("="*50)
 #         percentage = (count / event_counter * 100) if event_counter > 0 else 0
 #         print(f"{mapping}: {count:,} events ({percentage:.1f}%)")
 #     print("="*50)
+=======
+>>>>>>> 8cf936542ea0f190c64b627131ce5e676cc3e419
