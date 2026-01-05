@@ -1,3 +1,0 @@
-kafka-python
-cassandra-driver
-psutil
