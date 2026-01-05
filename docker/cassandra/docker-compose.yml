@@ -1,0 +1,153 @@
+
+services:
+
+  cassandra1:
+    image: cassandra:4.1
+    container_name: cassandra1
+    hostname: cassandra1
+    ports:
+      - "9042:9042"
+    environment:
+      CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+      CASSANDRA_SEEDS: "cassandra1"
+      CASSANDRA_DC: dc1
+      CASSANDRA_RACK: rack1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+    volumes:
+      - cassandra1_data:/var/lib/cassandra
+    healthcheck:
+      test: ["CMD-SHELL", "cqlsh localhost 9042"]
+      interval: 30s
+      timeout: 10s
+      retries: 10
+    networks:
+      - kafka-net
+
+  cassandra2:
+    image: cassandra:4.1
+    container_name: cassandra2
+    hostname: cassandra2
+    depends_on:
+      - cassandra1
+    environment:
+      CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+      CASSANDRA_SEEDS: "cassandra1"
+      CASSANDRA_DC: dc1
+      CASSANDRA_RACK: rack1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+    volumes:
+      - cassandra2_data:/var/lib/cassandra
+    networks:
+      - kafka-net
+
+  cassandra3:
+    image: cassandra:4.1
+    container_name: cassandra3
+    hostname: cassandra3
+    depends_on:
+      - cassandra1
+    environment:
+      CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+      CASSANDRA_SEEDS: "cassandra1"
+      CASSANDRA_DC: dc1
+      CASSANDRA_RACK: rack1
+      CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+      CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+    volumes:
+      - cassandra3_data:/var/lib/cassandra
+    networks:
+      - kafka-net
+
+ # cassandra4:
+ #   image: cassandra:4.1
+ #   container_name: cassandra4
+ #   hostname: cassandra4
+ #   depends_on:
+ #     - cassandra1
+ #   environment:
+ #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+ #     CASSANDRA_SEEDS: "cassandra1"
+ #     CASSANDRA_DC: dc1
+ #     CASSANDRA_RACK: rack1
+ #     CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+ #     CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+ #   volumes:
+ #     - cassandra3_data:/var/lib/cassandra
+ #   networks:
+ #     - kafka-net
+ # cassandra5:
+ #   image: cassandra:4.1
+ #   container_name: cassandra5
+ #   hostname: cassandra5
+ #   depends_on:
+ #     - cassandra1
+ #   environment:
+ #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+ #     CASSANDRA_SEEDS: "cassandra1"
+ #     CASSANDRA_DC: dc1
+ #     CASSANDRA_RACK: rack1
+ #     CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+ #     CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+ #   volumes:
+ #     - cassandra3_data:/var/lib/cassandra
+ #   networks:
+ #     - kafka-net
+
+ # cassandra6:
+ #   image: cassandra:4.1
+ #   container_name: cassandra6
+ #   hostname: cassandra6
+ #   depends_on:
+ #     - cassandra1
+ #   environment:
+ #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
+ #     CASSANDRA_SEEDS: "cassandra1"
+ #     CASSANDRA_DC: dc1
+ #     CASSANDRA_RACK: rack1
+ #     CASSANDRA_ENDPOINT_SNITCH: GossipingPropertyFileSnitch
+ #     CASSANDRA_ENABLE_MATERIALIZED_VIEWS: "true"
+ #   volumes:
+ #     - cassandra3_data:/var/lib/cassandra
+ #   networks:
+ #     - kafka-net
+
+  cassandra-init:
+    image: python:3.10
+    container_name: cassandra-init
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+    volumes:
+      - .:/app
+      - ./requirements.txt:/requirements.txt
+    working_dir: /app
+    command: >
+      sh -c "
+      pip install -r /requirements.txt &&
+      python init.py
+      "
+    restart: "no"
+    networks:
+      - kafka-net
+
+  consumer:
+    build: ./consumer
+    container_name: taxi-consumer-cassandra
+    depends_on:
+      cassandra1:
+        condition: service_healthy
+    networks:
+      - kafka-net
+
+      
+volumes:
+  cassandra1_data:
+  cassandra2_data:
+  cassandra3_data:
+
+networks:
+  kafka-net:
+    external: true
+  
