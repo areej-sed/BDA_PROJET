@@ -76,14 +76,8 @@ services:
     volumes:
       - ../../data/output/:/app/data
 
-#   # consumer_cassandra:
-#   #   build: ./consumer/cassandra
-#   #   container_name: taxi-consumer-cassandra
-#   #   depends_on:
-#   #     - kafka1
-#   #   networks:
-#   #     - kafka-net
 
 networks:
   kafka-net:
     driver: bridge
+    external: true
