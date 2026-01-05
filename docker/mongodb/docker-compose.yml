@@ -63,12 +63,30 @@ services:
       - mongo-net
     restart: on-failure
 
+  mongo-init:
+    image: docker:27-cli
+    container_name: mongo-init
+    depends_on:
+      - mongos
+      - configsvr
+      - shard1
+      - shard2
+      - shard3
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+      - ./init-mongo.sh:/init-mongo.sh
+      - ./mongo-init.js:/mongo-init.js
+    command: sh /init-mongo.sh
+    networks:
+      - mongo-net
+    restart: "no"
+
   # Consumer
   consumer:
     build: ./consumer
     container_name: mongo-consumer
     depends_on:
-      - mongos
+      - mongo-init
     networks:
       - mongo-net
       - kafka-net
