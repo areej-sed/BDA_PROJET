@@ -24,20 +24,30 @@ BDA_PROJET/
 │   └── data_preprocessing.ipynb # Notebook principal pour le nettoyage et la conversion des données
 │
 ├── docker/                     # Configuration des conteneurs Docker
+│   ├── cassandra/              # Environnement Cassandra
+│   │   ├── docker-compose_cassandra.yml
+│   │   └── schema.cql          # Schéma de la base de données
+│   │
 │   ├── kafka/                  # Environnement Kafka
-│   │   ├── docker-compose.yml  # Déploiement du cluster Kafka (Zookeeper, Brokers, Control Center)
-│   │   └── producer/           # Producer Kafka (Python)
-│   │       ├── producer.py     # Script d'envoi des données vers Kafka
-│   │       ├── Dockerfile      # Image Docker du producer
-│   │       └── requirements.txt # Dépendances Python du producer
+│   │   ├── consumer/           # Consumers Kafka
+│   │   │   └── cassandra/      # Consumer vers Cassandra
+│   │   │       ├── consumer_cassandra.py
+│   │   │       ├── Dockerfile
+│   │   │       └── requirements.txt
+│   │   ├── producer/           # Producer Kafka
+│   │   │   ├── producer.py
+│   │   │   ├── Dockerfile
+│   │   │   └── requirements.txt
+│   │   └── docker-compose.yml  # Cluster Kafka
 │   │
 │   └── mongodb/                # Environnement MongoDB
-│       ├── consumer/           # Consumer Kafka vers MongoDB (Python)
-│       │   ├── consumer.py     # Script d'ingestion des données
-│       │   ├── Dockerfile      # Image Docker du consumer
-│       │   └── requirements.txt # Dépendances Python du consumer
-│       ├── docker-compose.yml  # Déploiement du cluster MongoDB (Config, Shards, Router, Consumer)
-│       └── init-mongo.sh       # Script d'initialisation
+│       ├── consumer/           # Consumer vers MongoDB
+│       │   ├── consumer.py
+│       │   ├── Dockerfile
+│       │   └── requirements.txt
+│       ├── docker-compose.yml  # Cluster MongoDB
+│       ├── init-mongo.sh
+│       └── mongo-init.js
 │
 └── README.md                   # Documentation du projet
 ```
@@ -109,24 +119,11 @@ Les principales étapes réalisées dans ce notebook sont :
 
 ## Partie 2 : Mise en place du Cluster Kafka avec Docker
 
-**Étape 1 :**
-
+**Étape 1 : Construction et Démarrage du Cluster (sans Producer)**
 ```bash
-docker network create kafka-net
 cd docker/kafka
-docker compose up -d
-```
-
-**verefication**
-
-```bash
-docker ps
-```
-
-**verefication des logs**
-
-```bash
-docker logs kafka1
+docker compose build
+docker compose up -d zookeeper kafka1 kafka2 kafka3
 ```
 
 **Étape 2 : Création du topic Kafka taxi.raw**
@@ -136,99 +133,48 @@ Création du topic :
 docker exec -it kafka1 kafka-topics --create --topic taxi.raw --bootstrap-server kafka1:9092 --partitions 6 --replication-factor 2
 ```
 
-Vérifier si le topic existe :
+Vérifier les offsets (optionnel) :
 ```bash
-docker exec -it kafka1 kafka-topics --list --bootstrap-server kafka1:9092
-```
-
-Supprimer le topic (si nécessaire pour réinitialiser les données) :
-```bash
-docker exec -it kafka1 kafka-topics --delete --topic taxi.raw --bootstrap-server kafka1:9092
+docker exec -it kafka1 kafka-run-class kafka.tools.GetOffsetShell --broker-list kafka1:9092 --topic taxi.raw
 ```
 
 **Étape 3 : Lancer le Producer**
-
 ```bash
 docker compose up producer
+```
+
+**Arrêt du cluster (avec suppression des volumes)**
+```bash
+docker compose down -v
 ```
 
 ---
 
 ## Partie 3 : Cluster MongoDB (Sharding) et Consumer
 
-**Étape 1 : Démarrage du cluster MongoDB**
-
+**Étape 1 : Démarrage du cluster**
 ```bash
 cd docker/mongodb
-docker-compose up -d
+docker compose build
+docker compose up -d configsvr shard1 shard2 shard3 mongos mongo-init
 ```
 
-**Étape 2 : Initialisation du Config Server**
-
+**Étape 2 : Vérification de l'initialisation**
 ```bash
-docker exec -it mongo-config mongosh --port 27019 --eval "rs.initiate({_id:'configrs',configsvr:true,members:[{_id:0,host:'mongo-config:27019'}]})"
+docker logs -f mongo-init
 ```
 
-_Attendre 5 secondes..._
-
-```powershell
-Start-Sleep -Seconds 5
-# ou "sleep 5" sur Linux/Mac
-```
-
-**Étape 3 : Initialisation des Shards**
-
+**Étape 3 : Démarrage du Consumer**
 ```bash
-docker exec -it mongo-shard1 mongosh --port 27018 --eval "rs.initiate({_id:'shard1rs',members:[{_id:0,host:'mongo-shard1:27018'}]})"
-docker exec -it mongo-shard2 mongosh --port 27018 --eval "rs.initiate({_id:'shard2rs',members:[{_id:0,host:'mongo-shard2:27018'}]})"
-docker exec -it mongo-shard3 mongosh --port 27018 --eval "rs.initiate({_id:'shard3rs',members:[{_id:0,host:'mongo-shard3:27018'}]})"
+docker compose up consumer
 ```
 
-_Attendre 15 secondes..._
-
-```powershell
-Start-Sleep -Seconds 15
-# ou "sleep 15" sur Linux/Mac
-```
-
-**Étape 4 : Ajout des Shards au Router**
-
+**Arrêt du cluster (avec suppression des volumes)**
 ```bash
-docker exec -it mongos mongosh --eval "sh.addShard('shard1rs/mongo-shard1:27018')"
-docker exec -it mongos mongosh --eval "sh.addShard('shard2rs/mongo-shard2:27018')"
-docker exec -it mongos mongosh --eval "sh.addShard('shard3rs/mongo-shard3:27018')"
+docker compose down -v
 ```
 
-**Étape 5 : Activation du Sharding**
 
-```bash
-docker exec -it mongos mongosh --eval "sh.enableSharding('taxi_streaming')"
-```
-
-**Étape 6 : Création de la collection et de la clé de sharding**
-
-```bash
-docker exec -it mongos mongosh --eval "use taxi_streaming; db.createCollection('taxi_events'); db.taxi_events.createIndex({trip_id:1},{unique:true}); db.taxi_events.createIndex({pickup_borough_id:1}); sh.shardCollection('taxi_streaming.taxi_events',{pickup_borough_id:1})"
-
-docker exec -it mongos mongosh --eval "use taxi_streaming;"
-docker exec -it mongos mongosh --eval "db.createCollection('taxi_events');"
-docker exec -it mongos mongosh --eval "db.taxi_events.createIndex({trip_id:1},{unique:true});"
-docker exec -it mongos mongosh --eval "db.taxi_events.createIndex({pickup_borough_id:1});"
-docker exec -it mongos mongosh --eval "sh.shardCollection('taxi_streaming.taxi_events',{pickup_borough_id:1});"
-```
-
-**Vérification du statut du Sharding**
-
-```bash
-docker exec -it mongos mongosh --eval "sh.status()"
-```
-
-**Étape 7 : Démarrage du Consumer**
-
-```bash
-docker restart mongo-consumer
-docker logs -f mongo-consumer
-```
 
 _Sortie attendue :_
 ```
@@ -243,6 +189,64 @@ _Sortie attendue :_
 
 ```bash
 docker exec -it mongos mongosh --eval "use taxi_streaming; db.taxi_events.countDocuments()"
+```
+
+**Vérification de la distribution des données (Sharding)**
+
+```bash
+docker exec -it mongos mongosh --eval "use taxi_streaming; db.taxi_events.getShardDistribution()"
+```
+
+_Example de Sortie attendue :_
+```
+Shard shard1rs at shard1rs/mongo-shard1:27018
+{
+  data: '1.32MiB',
+  docs: 2624,
+  chunks: 2,
+  'estimated data per chunk': '676KiB',
+  'estimated docs per chunk': 1312
+}
+---
+Shard shard3rs at shard3rs/mongo-shard3:27018
+{
+  data: '32KiB',
+  docs: 73,
+  chunks: 2,
+  'estimated data per chunk': '16KiB',
+  'estimated docs per chunk': 36
+}
+---
+Shard shard2rs at shard2rs/mongo-shard2:27018
+{
+  data: '7.8MiB',
+  docs: 15203,
+  chunks: 2,
+  'estimated data per chunk': '3.9MiB',
+  'estimated docs per chunk': 7601
+}
+---
+Totals
+{
+  data: '9.15MiB',
+  docs: 17900,
+  chunks: 6,
+  'Shard shard1rs': [
+    '14.43 % data',
+    '14.65 % docs in cluster',
+    '528B avg obj size on shard'
+  ],
+  'Shard shard3rs': [
+    '0.34 % data',
+    '0.4 % docs in cluster',
+    '449B avg obj size on shard'
+  ],
+  'Shard shard2rs': [
+    '85.22 % data',
+    '84.93 % docs in cluster',
+    '538B avg obj size on shard'
+  ]
+}
 ```
 ## Partie 4 : Mise en place du Cluster Cassandra avec Docker
 
@@ -265,3 +269,4 @@ docker ps
 cd docker/kafka
 docker compose up -d consumer_cassandra
 ```
+
