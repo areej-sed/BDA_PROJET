@@ -2,12 +2,19 @@
 
 Projet du module **BDABD**
 
+Préparé par : 
+SEDDIKI Aridj
+BOUREKIA Nihad
+KALACHE Rachid Abdelghafour
+---
+
+Lien du rapport de projet : https://shorturl.at/sqPn4
+
 ---
 
 ## 1. Description du projet
 
-Ce projet a pour objectif de ....
-
+Ce projet vise à concevoir et tester un pipeline Big Data temps réel pour les flux NYC Taxi. Kafka est utilisé pour le streaming, tandis que MongoDB et Cassandra servent au stockage et à l’analyse des données. L’objectif est de maîtriser le traitement en streaming, la modélisation NoSQL, et d’évaluer les performances et la scalabilité des clusters, le tout orchestré via Docker.
 ---
 
 ## 1.1 Structure du projet
