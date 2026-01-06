@@ -261,7 +261,7 @@ Totals
 
 ```bash
 cd docker/cassandra
-docker-compose -f docker-compose_cassandra.yml up -d
+docker-compose up -d
 ```
 
 **Vérification**
@@ -269,11 +269,23 @@ docker-compose -f docker-compose_cassandra.yml up -d
 ```bash
 docker ps
 ```
-
-**Étape 2 : Lancer le consumer pour creer et remplir les tables**
+**Étape 2 : Lancer le script python "init.py" pour creer le keyspace et les tables**
 
 ```bash
-cd docker/kafka
-docker compose up -d consumer_cassandra
+cd docker/cassandra
+docker compose up -d init.py
 ```
 
+**Étape 3 : Lancer le consumer pour remplir les tables**
+
+```bash
+cd docker/cassandra
+docker compose up -d consumer
+```
+
+**Étape 4 : Lancer le script python "test2.py" pour creer le nouveau schema du test **
+
+```bash
+cd docker/cassandra
+docker compose up -d test2
+```
