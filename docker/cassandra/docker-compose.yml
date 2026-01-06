@@ -112,7 +112,8 @@ services:
  #     - cassandra6_data:/var/lib/cassandra
  #   networks:
  #     - kafka-net
-
+ 
+ 
   cassandra-init:
     image: python:3.10
     container_name: cassandra-init
@@ -140,6 +141,27 @@ services:
         condition: service_healthy
     networks:
       - kafka-net
+
+ # test2:
+ #   image: python:3.10
+ #   container_name: test2
+ #   depends_on:
+ #     cassandra1:
+ #       condition: service_healthy
+ #   volumes:
+ #     - .:/app
+ #     - ../../data/output/:/data
+ #     - ./requirements.txt:/requirements.txt
+ #   working_dir: /app
+ #   command: >
+ #     sh -c "
+ #     pip install -r /requirements.txt &&
+ #     python test2.py
+ #     "
+ #   restart: "no"
+ #   networks:
+ #     - kafka-net
+     
 
       
 volumes:
