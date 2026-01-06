@@ -8,6 +8,8 @@ services:
     ports:
       - "9042:9042"
     environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 100M
       CASSANDRA_CLUSTER_NAME: "TaxiCluster"
       CASSANDRA_SEEDS: "cassandra1"
       CASSANDRA_DC: dc1
@@ -31,6 +33,8 @@ services:
     depends_on:
       - cassandra1
     environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 100M
       CASSANDRA_CLUSTER_NAME: "TaxiCluster"
       CASSANDRA_SEEDS: "cassandra1"
       CASSANDRA_DC: dc1
@@ -49,6 +53,8 @@ services:
     depends_on:
       - cassandra1
     environment:
+      MAX_HEAP_SIZE: 512M
+      HEAP_NEWSIZE: 100M
       CASSANDRA_CLUSTER_NAME: "TaxiCluster"
       CASSANDRA_SEEDS: "cassandra1"
       CASSANDRA_DC: dc1
@@ -67,6 +73,8 @@ services:
  #   depends_on:
  #     - cassandra1
  #   environment:
+ #     MAX_HEAP_SIZE: 512M
+ #     HEAP_NEWSIZE: 100M
  #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
  #     CASSANDRA_SEEDS: "cassandra1"
  #     CASSANDRA_DC: dc1
@@ -84,6 +92,8 @@ services:
  #   depends_on:
  #     - cassandra1
  #   environment:
+ #     MAX_HEAP_SIZE: 512M
+ #     HEAP_NEWSIZE: 100M
  #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
  #     CASSANDRA_SEEDS: "cassandra1"
  #     CASSANDRA_DC: dc1
@@ -102,6 +112,8 @@ services:
  #   depends_on:
  #     - cassandra1
  #   environment:
+ #     MAX_HEAP_SIZE: 512M
+ #     HEAP_NEWSIZE: 100M
  #     CASSANDRA_CLUSTER_NAME: "TaxiCluster"
  #     CASSANDRA_SEEDS: "cassandra1"
  #     CASSANDRA_DC: dc1
