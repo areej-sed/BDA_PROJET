@@ -16,10 +16,10 @@ while True:
         )
         session = cluster.connect()
         session.default_timeout = 60
-        print("✅ Connecté à Cassandra")
+        print(" Connecté à Cassandra")
         break
     except Exception:
-        print("⏳ Cassandra non prête, retry dans 5s...")
+        print(" Cassandra non prête, retry dans 5s...")
         time.sleep(5)
 
 # ==============================
