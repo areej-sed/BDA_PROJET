@@ -7,52 +7,75 @@ WITH replication = {
 USE nyc_taxi;
 
 -- 1. Table principale pour les trajets par borough et heure
-CREATE TABLE taxi_trips_by_borough_hour (
-    pickup_borough text,
-    pickup_hour int,            
-    pickup_date date,          
-    trip_id bigint,
-    pickup_datetime timestamp,
-    dropoff_datetime timestamp,
-    passenger_count float,
-    trip_distance float,
-    fare_amount float,
-    total_amount float,
-    pickup_zone text,
-    dropoff_zone text,
-    pickup_latitude double,
-    pickup_longitude double,
-    dropoff_latitude double,
-    dropoff_longitude double,
-    PRIMARY KEY ((pickup_borough, pickup_hour), pickup_date, trip_id)
-) WITH CLUSTERING ORDER BY (pickup_date ASC);
+CREATE TABLE taxi_trips_by_borough_date (
+        pickup_borough text,
+        pickup_date date,
+        pickup_hour int,
+        pickup_datetime timestamp,
+        trip_id bigint,
+        dropoff_datetime timestamp,
+        passenger_count int,
+        trip_distance double,
+        fare_amount double,
+        total_amount double,
+        pickup_zone text,
+        dropoff_zone text,
+        pickup_latitude double,
+        pickup_longitude double,
+        dropoff_latitude double,
+        dropoff_longitude double,
+        PRIMARY KEY (
+                (pickup_borough, pickup_date),
+                pickup_hour,
+                pickup_datetime,
+                trip_id
+        )
+    )
+    WITH CLUSTERING ORDER BY (
+    pickup_hour ASC,
+    pickup_datetime DESC,
+    trip_id ASC
+    );
 
 -- 2. Table pour top zones par montant 
-CREATE TABLE top_zones_by_amount_counter (
-    pickup_borough text,
-    pickup_zone text,
-    total_amount_sum counter,
-    PRIMARY KEY (pickup_borough, pickup_zone)
-);
+CREATE TABLE top_zones_by_amount (
+        pickup_borough text,
+        pickup_date date,
+        pickup_hour int,
+        pickup_zone text,
+        total_amount counter,
+        trips_count counter,
+        PRIMARY KEY (
+            (pickup_borough, pickup_date, pickup_hour),
+            pickup_zone
+        )
+    );
 
 -- 3. Table pour distribution du nombre de passagers
-CREATE TABLE passenger_distribution_by_borough (
-    pickup_borough text,
-    pickup_hour int,            
-    pickup_date date,          
-    passenger_count int,
-    trips_count counter,
-    PRIMARY KEY ((pickup_borough, pickup_hour, passenger_count), pickup_date)
-) WITH CLUSTERING ORDER BY (pickup_date ASC);
+ CREATE TABLE passenger_distribution (
+        pickup_borough text,
+        pickup_date date,
+        pickup_hour int,
+        passenger_count int,
+        trips_count counter,
+        PRIMARY KEY (
+            (pickup_borough, pickup_date, pickup_hour),
+            passenger_count
+        )
+    );
 
 -- 4. Table pour les trajets anormaux
-CREATE TABLE anomalous_trips_by_borough (
-    pickup_borough text,
-    pickup_hour int,            
-    pickup_date date,           
-    trip_id bigint,
-    anomaly_type text,
-    trip_distance float,
-    total_amount float,
-    PRIMARY KEY ((pickup_borough, pickup_hour), pickup_date, trip_id)
-) WITH CLUSTERING ORDER BY (pickup_date ASC);
+ CREATE TABLE anomalous_trips (
+        anomaly_type text,
+        pickup_date date,
+        pickup_borough text,
+        pickup_datetime timestamp,
+        trip_id bigint,
+        trip_distance double,
+        total_amount double,
+        PRIMARY KEY (
+            (anomaly_type, pickup_date),
+            pickup_datetime,
+            trip_id
+        )
+    );
