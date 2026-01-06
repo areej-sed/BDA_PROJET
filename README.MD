@@ -3,9 +3,9 @@
 Projet du module **BDABD**
 
 Préparé par : 
-SEDDIKI Aridj
-BOUREKIA Nihad
-KALACHE Rachid Abdelghafour
+- SEDDIKI Aridj
+- BOUREKIA Nihad
+- KALACHE Rachid Abdelghafour
 ---
 
 Lien du rapport de projet : https://shorturl.at/sqPn4
