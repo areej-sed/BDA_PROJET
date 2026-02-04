@@ -261,7 +261,8 @@ Totals
 
 ```bash
 cd docker/cassandra
-docker-compose up -d
+docker compose build
+docker compose up -d cassandra1 cassandra2 cassandra3 cassandra-init
 ```
 
 **Vérification**
@@ -269,21 +270,15 @@ docker-compose up -d
 ```bash
 docker ps
 ```
-**Étape 2 : Lancer le script python "init.py" pour creer le keyspace et les tables**
+
+**Étape 2 : Lancer le consumer pour remplir les tables**
 
 ```bash
 cd docker/cassandra
-docker compose up -d init.py
+docker compose up consumer
 ```
 
-**Étape 3 : Lancer le consumer pour remplir les tables**
-
-```bash
-cd docker/cassandra
-docker compose up -d consumer
-```
-
-**Étape 4 : Lancer le script python "test2.py" pour creer le nouveau schema du test **
+**Étape 3 : Lancer le script python "test2.py" pour creer le nouveau schema du test **
 
 ```bash
 cd docker/cassandra
