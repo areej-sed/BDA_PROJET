@@ -3,23 +3,70 @@ from cassandra.cluster import Cluster
 from datetime import datetime
 import json
 import time
+import sys
+
+# Unbuffered output
+sys.stdout = open(sys.stdout.fileno(), 'w', buffering=1)
+
+# Add connection pool settings
+from cassandra.pool import HostConnectionPool
+
+# Set higher concurrency
+CONCURRENT_REQUESTS = 1000
 
 # -----------------------------
 # Connexion Cassandra
 # -----------------------------
+print("[*] Connecting to Cassandra...")
 while True:
     try:
-        cluster = Cluster(['cassandra1'])
+        cluster = Cluster(
+            ['cassandra1'],
+            max_schema_agreement_wait=30,
+            control_connection_timeout=30
+        )
         session = cluster.connect('nyc_taxi')
-        print("Connecté à Cassandra")
+        session.default_timeout = 60
+        session.max_pool_size = 200
+        print("[✓] Connecté à Cassandra")
         break
     except Exception as e:
-        print("Cassandra non prête, retry dans 5s...")
+        print(f"[!] Cassandra non prête: {e}, retry dans 5s...")
         time.sleep(5)
+
+# Prepare statements for better performance
+insert_borough = session.prepare("""
+    INSERT INTO taxi_trips_by_borough_date (
+        pickup_borough, pickup_date, pickup_hour, pickup_datetime,
+        trip_id, dropoff_datetime, passenger_count, trip_distance,
+        fare_amount, total_amount, pickup_zone, dropoff_zone,
+        pickup_latitude, pickup_longitude, dropoff_latitude, dropoff_longitude
+    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+""")
+
+update_zones = session.prepare("""
+    UPDATE top_zones_by_amount
+    SET total_amount = total_amount + ?, trips_count = trips_count + 1
+    WHERE pickup_borough = ? AND pickup_date = ? AND pickup_hour = ? AND pickup_zone = ?
+""")
+
+update_passengers = session.prepare("""
+    UPDATE passenger_distribution
+    SET trips_count = trips_count + 1
+    WHERE pickup_borough = ? AND pickup_date = ? AND pickup_hour = ? AND passenger_count = ?
+""")
+
+insert_anomaly = session.prepare("""
+    INSERT INTO anomalous_trips (
+        anomaly_type, pickup_date, pickup_borough, pickup_datetime,
+        trip_id, trip_distance, total_amount
+    ) VALUES (?, ?, ?, ?, ?, ?, ?)
+""")
 
 # -----------------------------
 # Connexion Kafka
-# -----------------------------
+# ----------------------------- 
+print("[*] Connecting to Kafka...")
 while True:
     try:
         consumer = KafkaConsumer(
@@ -28,12 +75,14 @@ while True:
             value_deserializer=lambda m: json.loads(m.decode('utf-8')),
             auto_offset_reset='earliest',
             enable_auto_commit=False,
-            group_id='taxi-consumer-group'
+            group_id='taxi-consumer-group',
+            max_poll_records=500,
+            session_timeout_ms=30000
         )
-        print("Consumer Kafka démarré...")
+        print("[✓] Consumer Kafka démarré...")
         break
     except Exception as e:
-        print("Kafka non prêt, retry dans 5s...")
+        print(f"[!] Kafka non prêt: {e}, retry dans 5s...")
         time.sleep(5)
 
 
@@ -169,14 +218,14 @@ while True:
                 # Affichage et commit tous les 1000 events
                 # -----------------------------
                 processed += 1
-                if processed % 1000 == 0:
+                if processed % 100 == 0:
                     consumer.commit()
                     elapsed = time.time() - start_time
                     print(f"{processed} events traités {elapsed:.2f}s | Débit ≈ {processed/elapsed:.2f} events/s")
 
             except Exception as e:
                 print("Erreur traitement message :", e)
-                time.sleep(0.5)
+                # time.sleep(0.5)
 
 # -----------------------------
 # Statistiques de latence

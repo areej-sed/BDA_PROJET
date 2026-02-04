@@ -154,25 +154,25 @@ services:
     networks:
       - kafka-net
 
- # test2:
- #   image: python:3.10
- #   container_name: test2
- #   depends_on:
- #     cassandra1:
- #       condition: service_healthy
- #   volumes:
- #     - .:/app
- #     - ../../data/output/:/data
- #     - ./requirements.txt:/requirements.txt
- #   working_dir: /app
- #   command: >
- #     sh -c "
- #     pip install -r /requirements.txt &&
- #     python test2.py
- #     "
- #   restart: "no"
- #   networks:
- #     - kafka-net
+  test2:
+   image: python:3.10
+   container_name: test2
+   depends_on:
+     cassandra1:
+       condition: service_healthy
+   volumes:
+     - .:/app
+     - ../../data/output/:/data
+     - ./requirements.txt:/requirements.txt
+   working_dir: /app
+   command: >
+     sh -c "
+     pip install -r /requirements.txt &&
+     python test2.py
+     "
+   restart: "no"
+   networks:
+     - kafka-net
      
 
       
@@ -187,4 +187,12 @@ volumes:
 networks:
   kafka-net:
     external: true
+    name: kafka_kafka-net
   
+
+# networks:
+#   mongo-net:
+#     driver: bridge
+#   kafka-net:
+#     external: true
+#     name: kafka_kafka-net

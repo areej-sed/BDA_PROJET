@@ -20,6 +20,14 @@ docker exec mongos mongosh --eval "sh.addShard('shard3rs/mongo-shard3:27018')"
 # Enable Sharding
 docker exec mongos mongosh --eval "sh.enableSharding('taxi_streaming')"
 
+sleep 5
+
+# Enable Balancer and Check Status
+echo "🔹 Starting Balancer..."
+docker exec mongos mongosh --eval "sh.startBalancer()"
+sleep 3
+docker exec mongos mongosh --eval "sh.getBalancerState()"
+
 # Create Collection and Shard with HASHED key
 # docker exec mongos mongosh --eval "
 #   db = db.getSiblingDB('taxi_streaming');
